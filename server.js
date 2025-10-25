@@ -14,6 +14,11 @@ const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole)
 
+// Endpoint root untuk cek server
+app.get('/', (req, res) => {
+    res.send('Backend is running!');
+});
+
 // tambah akun
 app.post('/create-user', async (req, res) => {
     const { username, password, role } = req.body
