@@ -3,6 +3,14 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 
+function printLabelValue(printer, label, value, totalWidth = 32) {
+    const labelText = label.endsWith(':') ? label : label + ':';
+
+    const line = labelText + String(value).padStart(totalWidth - labelText.length);
+    printer.println(line);
+}
+
+
 dotenv.config()
 
 const app = express()
@@ -18,6 +26,54 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole)
 app.get('/', (req, res) => {
     res.send('Backend is running!');
 });
+
+// print struk 
+app.post('/print-struk', async (req, res) => {
+    const { kirimanId, nopol, kirimanDate, username, supplier, panjang, lebar, tinggi, plus, volume } = req.body
+
+    try {
+        const printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON,       // Woya -> EPSON emulation
+            interface: "usb",               
+            removeSpecialCharacters: false,
+            lineCharacter: "-",
+        })
+
+        // Header
+        printer.alignCenter()
+        printer.println("Tentrem Perkasa")
+        printer.drawLine()
+
+        // Items
+        printLabelValue(printer, "No Struk", kirimanId);
+        printLabelValue(printer, "Nopol", nopol);
+        printLabelValue(printer, "Tgl", kirimanDate);
+        printLabelValue(printer, "Operator", username);
+        printLabelValue(printer, "Supplier", supplier);
+
+        printer.drawLine();
+
+
+        // Footer
+        printLabelValue(printer, "Panjang", panjang);
+        printLabelValue(printer, "Lebar", lebar);
+        printLabelValue(printer, "Tinggi", tinggi);
+        printLabelValue(printer, "Plus", plus);
+        printLabelValue(printer, "Volume", volume);
+
+        printer.drawLine();
+
+        printer.cut()
+
+        // run print
+        await printer.execute()
+        return res.json({ success: true, message: "Struk dicetak!" })
+
+    } catch (err) {
+        console.error(err)
+        return res.status(500).json({ success: false, error: err.message })
+    }
+})
 
 // tambah akun
 app.post('/create-user', async (req, res) => {
